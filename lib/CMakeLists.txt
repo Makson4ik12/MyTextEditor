@@ -1,0 +1,3 @@
+add_subdirectory(mystring)
+add_subdirectory(pdcurses)
+add_subdirectory(pdcurses_adapter)

@@ -1,4 +1,4 @@
-#include "pdcurses/curses.h"
+#include "curses.h"
 
 class PDCursesAdapter {
     public:
