@@ -8,8 +8,3 @@ target_sources(pdcursesadapter
   )
 
 target_include_directories(pdcursesadapter PUBLIC ${CMAKE_CURRENT_LIST_DIR})
-
-target_link_libraries(pdcursesadapter
-  PRIVATE
-    pdcurses
-  )

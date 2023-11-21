@@ -1,13 +1,18 @@
 #include "PDCursesAdapter.hpp"
 
 PDCursesAdapter::PDCursesAdapter () {
-    initscr();			/* Start curses mode 		  */
-	printw("Hello World !!!");	/* Print Hello World		  */
-	refresh();			/* Print it on to the real screen */
-	getch();			/* Wait for user input */
-	endwin();			/* End curses mode		  */
+    initscr();	// Переход в curses-режим
 }
 
 PDCursesAdapter::~PDCursesAdapter () {
-    
+    endwin();	// Выход из curses-режима. Обязательная команда.
+}
+
+int PDCursesAdapter::get_char() {
+	return getch();
+}
+
+void PDCursesAdapter::print_message(const char* text) {
+	printw(text);
+	refresh();	// Вывод приветствия на настоящий экран
 }

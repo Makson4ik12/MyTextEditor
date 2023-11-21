@@ -7,9 +7,9 @@ add_subdirectory(model)
 target_link_libraries(mytexteditor
   PRIVATE
     mystring
+    pdcurses
     controller
     model
     view
     pdcursesadapter
-    pdcurses
   )
