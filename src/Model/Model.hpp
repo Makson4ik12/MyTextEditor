@@ -12,6 +12,8 @@ class Model {
     Model(PDCursesAdapter* adapter);
     ~Model();
 
+    int parse_input_char(const int c);
+
     private:
     PDCursesAdapter* adapter;
     View* view;

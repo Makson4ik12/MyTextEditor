@@ -11,9 +11,9 @@ Controller::~Controller() {
 }
 
 void Controller::listen() {
-    adapter->print_message("Hello in MyTextEditor\n");
-
     while (1) {
-        adapter->get_char();
+        int c = adapter->get_char();
+
+        model->parse_input_char(c);
     }
 }

@@ -11,4 +11,6 @@ target_include_directories(view PUBLIC ${CMAKE_CURRENT_LIST_DIR})
 target_link_libraries(view
   PRIVATE
     pdcursesadapter
+    mystring
+    log
   )
