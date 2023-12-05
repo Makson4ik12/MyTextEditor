@@ -3,7 +3,7 @@
 #ifndef CONTROLLER_H
 #define CONTROLLER_H
 
-#include "PDCursesAdapter.hpp"
+#include "../../lib/pdcurses_adapter/PDCursesAdapter.hpp"
 #include "../model/Model.hpp"
 #include <iostream>
 

@@ -5,18 +5,26 @@
 
 #include "../pdcurses/curses.h"
 #include "../pdcurses/panel.h"
+#include "../mystring/MyString.h"
 
 class PDCursesAdapter {
     public:
     PDCursesAdapter ();
     ~PDCursesAdapter ();
 
+    int x_max = 0;
+    int y_max = 0;
+
     void init_windows();
-    void print_string(const char* text, int y, int x);
+    void print_string(MyString&  text, int y, int x);
     void print_char(const char c, int y, int x);
+    void print_status(MyString& text);
     void set_cursor (const int y, const int x);
-    void resize_windows();
     void del_char();
+    void clear_main_window();
+
+    void nav_edit_mode();
+    void cmd_mode();
 
     int get_char() const;
     int get_cursor_x ();

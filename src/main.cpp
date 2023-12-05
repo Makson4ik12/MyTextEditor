@@ -1,9 +1,8 @@
 #include <iostream>
-#include "MyString.h"
-#include "Controller.hpp"
+#include "controller/Controller.hpp"
 
 int main () {
     Controller controller;
-
+    
     controller.listen();
 }

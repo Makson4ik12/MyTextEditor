@@ -3,7 +3,7 @@
 #ifndef VIEW_H
 #define VIEW_H
 
-#include "PDCursesAdapter.hpp"
+#include "../../lib/pdcurses_adapter/PDCursesAdapter.hpp"
 #include "../../lib/mystring/MyString.h"
 #include "../Log/Log.hpp"
 #include <iostream>
@@ -17,29 +17,18 @@ class View {
     Log* log;
 
     /**
-     * @param mode
-     *      0 - navigation and editing,
-     *      1 - text input,
-     *      2 - command input,
-     *      3 - search
+     * Update file's page on window, up or down
+     * @param vector_start_line vector position to print on screen
+     * @param direction 0 - up, 1 - down
     */
-    void set_screen_mode(int mode);
+    void update_screen(std::vector<MyString>& text, int vector_start_line, int direction);
 
-    void update_screen();
-
-    /**
-     * @return mode
-     *      0 - navigation and editing,
-     *      1 - text input,
-     *      2 - command input,
-     *      3 - search
-    */
-    int get_screen_mode();
+    void update_console_info(MyString& mode_name, MyString& filename, int line_number, int lines_total);
+    
+    void update_console_info(MyString& mode_name, MyString& filename, MyString* cmd, int line_number, int lines_total);
 
     private:
     PDCursesAdapter* adapter;
-    std::vector<MyString>* buffer;
-    int screen_mode = 0;
 };
 
 #endif

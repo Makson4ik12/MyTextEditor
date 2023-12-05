@@ -5,7 +5,9 @@ PDCursesAdapter::PDCursesAdapter () {
 	initscr(); // Инициализация curses
     cbreak(); // Включение режима посимвольного ввода
     noecho(); // Отключение отображения вводимых символов
-    keypad(stdscr, TRUE); // Включение обработки специальных клавиш
+
+    getmaxyx(stdscr, y_max, x_max);
+    y_max -= 3;
 }
 
 PDCursesAdapter::~PDCursesAdapter () {
@@ -27,23 +29,6 @@ void PDCursesAdapter::set_cursor(const int y, const int x) {
 	wrefresh(this->text_window);
 }
 
-void PDCursesAdapter::resize_windows() {
-    int max_y, max_x;
-    getmaxyx(stdscr, max_y, max_x);
-
-    wresize(this->text_window, max_y - 1, max_x);
-    wresize(this->bottom_window, 1, max_x);
-
-    mvwin(this->bottom_window, max_y - 1, 0);
-
-    werase(stdscr);
-    box(this->text_window, 0, 0);
-    box(this->bottom_window, 0, 0);
-
-    wrefresh(this->text_window);
-    wrefresh(this->bottom_window);
-}
-
 void PDCursesAdapter::init_windows() {
 	int max_y, max_x;
     getmaxyx(stdscr, max_y, max_x);
@@ -57,7 +42,6 @@ void PDCursesAdapter::init_windows() {
     this->bottom_window = newwin(1, max_x, max_y - 1, 0);
     box(this->bottom_window, 0, 0);
 
-    mvwprintw(this->bottom_window, 0, 1, "Press 'q' to exit"); // (window*, y, x, const char*)
     wrefresh(this->bottom_window);
 	wrefresh(this->text_window);
 }
@@ -66,8 +50,8 @@ int PDCursesAdapter::get_char() const {
 	return wgetch(this->text_window);
 }
 
-void PDCursesAdapter::print_string(const char* text, int y, int x) {
-	mvwprintw(this->text_window, 1, 1, text);
+void PDCursesAdapter::print_string(MyString& text, int y, int x) {
+	mvwprintw(this->text_window, y, x, text.c_str());
 	wrefresh(this->text_window);
 }
 
@@ -76,8 +60,31 @@ void PDCursesAdapter::print_char(const char c, int y, int x) {
 	wrefresh(this->text_window);
 }
 
+void PDCursesAdapter::print_status(MyString& text) {
+    wmove(this->bottom_window, 0, 1);
+    wclrtoeol(this->bottom_window);
+	mvwprintw(this->bottom_window, 0, 1, text.c_str());
+	wrefresh(this->bottom_window);
+}
+
 void PDCursesAdapter::del_char() {
-    mvwdelch(text_window, get_cursor_y(), get_cursor_x() - 1);
-	box(this->text_window, 0, 0);
+	mvwaddch(text_window, get_cursor_y(), get_cursor_x() - 1, ' ');  // Вставляем пробел в текущем месте
+	wmove(text_window, get_cursor_y(), get_cursor_x() - 1);  // Перемещаем курсор влево
 	wrefresh(text_window);
+}
+
+void PDCursesAdapter::clear_main_window() {
+    wclear(text_window); // Очистка всего окна
+    box(this->text_window, 0, 0);
+    wrefresh(this->text_window);
+}
+
+void PDCursesAdapter::nav_edit_mode() {
+    noecho(); // Отключение отображения вводимых символов
+    keypad(this->text_window, TRUE); // Включение обработки специальных клавиш
+}
+
+void PDCursesAdapter::cmd_mode() {
+    noecho(); // Отключение отображения вводимых символов
+    keypad(stdscr, TRUE); // Включение обработки специальных клавиш
 }

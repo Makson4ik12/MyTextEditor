@@ -13,6 +13,7 @@ class Log {
     ~Log ();
 
     void print(const char* text);
+    void print(int num);
 };
 
 #endif
