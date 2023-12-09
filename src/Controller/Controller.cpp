@@ -14,6 +14,22 @@ void Controller::listen() {
     while (1) {
         int c = adapter->get_char();
 
-        model->parse_input_char(c);
+        switch (model->mode) {
+            case 0:
+                model->parse_nav_edit_mode(c);
+                break;
+
+            case 1:
+                model->parse_text_input_mode(c);
+                break;
+            
+            case 2:
+                model->parse_cmd_input_mode(c);
+                break;
+
+            case 3: 
+                model->parse_search_mode(c);
+                break;
+        }
     }
 }

@@ -31,11 +31,11 @@ void View::update_console_info(MyString& mode_name, MyString& filename, int line
     adapter->print_status(info);
 }
 
-void View::update_console_info(MyString& mode_name, MyString& filename, MyString* cmd, int line_number, int lines_total) {
+void View::update_console_info(MyString& mode_name, MyString& filename, MyString& cmd, int line_number, int lines_total) {
     MyString info(" ");
     info += mode_name.c_str();
     info += " | cmd: ";
-    info += cmd->c_str();
+    info += cmd.c_str();
     info += " | ";
     info += filename.c_str();
     info += " | ";
@@ -87,7 +87,7 @@ void View::update_screen(std::vector<MyString>& text, int current_line, int dire
             if ((text[i].size() % (adapter->x_max - 2)) != 0) virtual_lines += 1;
 
             if ((virtual_lines + i) >= end_pos) {
-                log->print("dada");
+                // когда в конце строки
             } else {
                 MyString tmp;
 

@@ -16,6 +16,7 @@ class Model {
 
     MyString current_mode;
     MyString current_file;
+    int mode = 0;
 
     /**
      * @param mode
@@ -31,23 +32,19 @@ class Model {
     int parse_cmd_input_mode(const int c);
     int parse_search_mode(const int c);
 
-    int parse_input_char(const int c);
-
-    int open_file();
+    int read_file();
     int save_to_file(MyString filename);
 
     private:
     PDCursesAdapter* adapter;
     View* view;
-    MyString* cmd_buffer;
-    int mode = 0;
+    MyString cmd_buffer;
 
-    int file_lines_count; // count of line of current file/terminal file
     std::vector<MyString> text_of_file; // contains file's lines
-    int current_text_page; // number of current text page on screen
-    int __line; // pointer to lines_positions <array with lines names>
+    int file_lines_count; // count of line of current file/terminal file
     MyString tmp_line; // if last line was too long and she was at bottom that it contains a unprinted part to print on next page
-    std::vector<int> lines_positions; // contains numbers of all lines (because few lines can be printing at as a many lines)
+    std::vector<int> lines_screen_positions; // contains screen positions of all lines: [line_idy_in_text_file] = line_idy_on_screen
+    int line_pointer; // pointer to lines_screen_positions <array with lines names>
 };
 
 #endif
