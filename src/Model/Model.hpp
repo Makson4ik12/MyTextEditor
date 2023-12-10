@@ -26,6 +26,8 @@ class Model {
      *      3 - search
     */
     void change_mode(int mode);
+    void init();
+    void update_line_idxy();
 
     int parse_nav_edit_mode(const int c);
     int parse_text_input_mode(const int c);
@@ -40,11 +42,8 @@ class Model {
     View* view;
     MyString cmd_buffer;
 
-    std::vector<MyString> text_of_file; // contains file's lines
-    int file_lines_count; // count of line of current file/terminal file
-    MyString tmp_line; // if last line was too long and she was at bottom that it contains a unprinted part to print on next page
-    std::vector<int> lines_screen_positions; // contains screen positions of all lines: [line_idy_in_text_file] = line_idy_on_screen
-    int line_pointer; // pointer to lines_screen_positions <array with lines names>
+    std::vector<MyString> current_file_array; // contains file's lines
+    int line_pointer; // pointer to vector at <lines_screen_positions> 
 };
 
 #endif

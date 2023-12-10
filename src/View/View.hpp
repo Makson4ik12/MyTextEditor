@@ -22,13 +22,15 @@ class View {
      * @param current_line curren line of text on screen
      * @param direction 0 - up, 1 - down
     */
-    void update_screen(std::vector<MyString>& text, int current_line, int direction, MyString& tmp_l);
+    int update_screen(std::vector<MyString>& text, int current_line, int direction, int lines_total);
 
     void update_console_info(MyString& mode_name, MyString& filename, int line_number, int lines_total);
 
     void update_console_info(MyString& mode_name, MyString& filename, MyString& cmd, int line_number, int lines_total);
 
     void clear_screen();
+
+    
 
     private:
     PDCursesAdapter* adapter;

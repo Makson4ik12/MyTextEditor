@@ -8,6 +8,7 @@ PDCursesAdapter::PDCursesAdapter () {
 
     getmaxyx(stdscr, y_max, x_max);
     y_max -= 3;
+	x_max -= 2;
 }
 
 PDCursesAdapter::~PDCursesAdapter () {
