@@ -13,59 +13,208 @@ Model::~Model() {
     delete view;
 }
 
-void Model::init() {
-    current_file_array.clear();
-    line_pointer = 0;
-    current_file = "no open file";
 
-    current_file_array.push_back("");
+// ****** NAVIGATION COMMANDS ****** //
+
+void Model::nav_cmd_first_page() {
+    line_pointer = view->page_up(1, current_file_array);
+    view->update_console_info(current_mode, current_file, line_pointer, current_file_array.size());
+    cmd_buffer.clear();
 }
 
-void Model::update_line_idxy() {
-
+void Model::nav_cmd_last_page() {
+    if (current_file_array.size() > adapter->y_max) {
+        line_pointer = view->page_down(current_file_array.size() - adapter->y_max, current_file_array);
+    } else {
+        line_pointer = view->page_up(1, current_file_array);
+    }
+    
+    view->update_console_info(current_mode, current_file, line_pointer, current_file_array.size());
+    cmd_buffer.clear();
 }
 
-void Model::change_mode(int new_mode) {
-    switch (new_mode) {
-        case 0:
-            adapter->nav_edit_mode();
-            current_mode = "> Navigation mode <";
-            view->update_console_info(current_mode, current_file, line_pointer, current_file_array.size());
-            break;
+void Model::nav_cmd_move_start() {
+    adapter->set_cursor(adapter->get_cursor_y(), 1);
+    cmd_buffer.clear();
+}
 
-        case 1:
-
-            break;
+// !!!!
+void Model::nav_cmd_move_end() {
+    if (current_file_array[line_pointer].size() <= adapter->x_max) {
+        if (current_file_array[line_pointer].size() != 0) {
+            adapter->set_cursor(adapter->get_cursor_y(), current_file_array[line_pointer].size());
+        } else {
+            adapter->set_cursor(adapter->get_cursor_y(), 1);
+        }
         
-        case 2:
-            adapter->cmd_mode();
-            current_mode = "> Command mode <";
-            view->update_console_info(current_mode, current_file, cmd_buffer, line_pointer, current_file_array.size());
-            break;
+    } else {
+        // прокрутка вправо
+        // ..
+    }
+    
+    cmd_buffer.clear();
+}
 
-        case 3: 
-            adapter->cmd_mode();
-            current_mode = "> Search mode <";
-            view->update_console_info(current_mode, current_file, cmd_buffer, line_pointer, current_file_array.size());
-            break;
+void Model::nav_cmd_x() {
+    int x = adapter->get_cursor_x() - 1;
 
-        default:
-            return;
+    if ((x >= 0) && ((x + 1) < (current_file_array[line_pointer].size()))) {
+        current_file_array[line_pointer].erase(x + 1, 1);
+        view->update_line(current_file_array[line_pointer], adapter->get_cursor_y(), x + 1);
     }
 
-    mode = new_mode;
+    cmd_buffer.clear();
 }
 
+void Model::nav_cmd_dd() {
+    nav_cmd_y();
+
+    if (current_file_array[line_pointer].size() != 0) {
+        current_file_array[line_pointer].clear();
+    }
+
+    current_file_array.erase(current_file_array.begin() + line_pointer);
+    
+    if (current_file_array.size() == 0) {
+        current_file_array.push_back("");
+        line_pointer = 0;
+    } else if (line_pointer >= current_file_array.size()) {
+        line_pointer--;
+    }
+
+    view->update_screen(current_file_array, line_pointer, -1, current_file_array.size());
+    adapter->set_cursor(view->update_screen(current_file_array, line_pointer, -1, current_file_array.size()), 1);
+    view->update_console_info(current_mode, current_file, line_pointer, current_file_array.size());
+
+    cmd_buffer.clear();
+}
+
+void Model::nav_cmd_y() {
+    if (current_file_array[line_pointer].size() != 0) {
+        clipboard = current_file_array[line_pointer];
+    }
+}
+
+void Model::nav_cmd_yw() {
+    MyString& line = current_file_array[line_pointer];
+
+    if ((line.size() == 0) || (line[adapter->get_cursor_x() - 1] == ' ')) {
+        cmd_buffer.clear();
+        return;
+    }
+
+    int word_start = 0;
+    int word_end = 0;
+
+    find_word(line, adapter->get_cursor_x() - 1, word_start, word_end);
+
+    clipboard = line.substr(word_start, word_end - word_start + 1);
+    cmd_buffer.clear();
+}
+
+// !!!!!!
+void Model::nav_cmd_diw() {
+    MyString& line = current_file_array[line_pointer];
+
+    if ((line.size() == 0) || (line[adapter->get_cursor_x() - 1] == ' ')) {
+        cmd_buffer.clear();
+        return;
+    }
+
+    int word_start = 0;
+    int word_end = 0;
+    int cursor_idx = adapter->get_cursor_x();
+    
+    find_word(line, adapter->get_cursor_x() - 1, word_start, word_end);
+    
+    if ((word_start == 0) && (word_end == (line.size() - 1))){
+        line.clear();
+    } else {
+        line.erase(word_start, word_end - word_start + 1);
+    }
+
+    if (line.size() == 0) {
+        cursor_idx = 1;
+    } else if (cursor_idx > line.size()) {
+        cursor_idx = line.size();
+    }
+
+    view->update_line(current_file_array[line_pointer], adapter->get_cursor_y(), cursor_idx);
+
+    cmd_buffer.clear();
+}
+
+// !!!!!!
+void Model::nav_cmd_p() {
+    // вставка в длинную строке !
+
+    if (clipboard.size() != 0) {
+        if ((current_file_array[line_pointer].size() == 0) || ((adapter->get_cursor_x() - 1) == (current_file_array[line_pointer].size() - 1))) {
+            current_file_array[line_pointer].append(clipboard.c_str());
+        } else {
+            current_file_array[line_pointer].insert(adapter->get_cursor_x(), clipboard.c_str());
+        }
+        
+        view->update_line(current_file_array[line_pointer], adapter->get_cursor_y() , adapter->get_cursor_x());
+    }
+
+    cmd_buffer.clear();
+}
+
+// !!!!
+void Model::nav_cmd_w(){
+    MyString& cur_line = current_file_array[line_pointer];
+    int current_cursor_position = adapter->get_cursor_x();
+
+    // лагает, сделать поддержку прокуртки + переход на некст / ласт страницу
+
+    while (true) {
+        if ((cur_line.size() == 0) || (adapter->get_cursor_x() >= cur_line.size())) {
+            line_pointer++;
+            view->update_console_info(current_mode, current_file, line_pointer, current_file_array.size());
+            cur_line = current_file_array[line_pointer];
+            adapter->set_cursor(line_pointer + 1, 1);
+            continue;
+        }
+
+        int find_index = cur_line.find(" ", adapter->get_cursor_x()); // find near space
+
+        // if space doesnt exist on this line
+        if (find_index == - 1) {
+                adapter->set_cursor(line_pointer + 1, cur_line.size());
+                break;
+        } else {
+
+            // if find space not after current word
+            if (find_index != current_cursor_position) {
+                adapter->set_cursor(line_pointer + 1, find_index);
+                break;
+
+            } else { // if find cursor after current word
+                adapter->set_cursor(line_pointer + 1, find_index + 1);
+            }
+        }
+    }
+
+    cmd_buffer.clear();
+}
+
+
+// ****** COMMAND COMMANDS ****** //
+
+void Model::cmd_go_to_line(int line) {
+    if ((line > 0) && (line <= current_file_array.size())) {
+        line_pointer = line - 1;
+        adapter->set_cursor(view->update_screen(current_file_array, line - 1, 1, current_file_array.size()), 1);
+    }
+
+    cmd_buffer.clear();
+}
+
+
+// ****** PARSERS ****** //
 int Model::parse_nav_edit_mode(const int c) {
     switch (c) {        
-        case 3: // ^C
-            
-            break;
-
-        case 22: // ^v
-            
-            break;
-        
         case KEY_UP:
             if (line_pointer != 0) {
                 int y = adapter->get_cursor_y() - 1;
@@ -176,6 +325,36 @@ int Model::parse_nav_edit_mode(const int c) {
             view->update_console_info(current_mode, current_file, line_pointer, current_file_array.size());
             break;
 
+        case 339: // PAGE_UP
+            line_pointer = view->page_up(line_pointer, current_file_array);
+            view->update_console_info(current_mode, current_file, line_pointer, current_file_array.size());
+            break;
+
+        case 338: // PAGE_DOWN
+            line_pointer = view->page_down(line_pointer, current_file_array);
+            view->update_console_info(current_mode, current_file, line_pointer, current_file_array.size());
+            break;
+
+        case (int) '^':
+            nav_cmd_move_start();
+            break;
+
+        case (int) '$':
+            nav_cmd_move_end();
+            break;
+
+        case (int) 'b':
+
+            break;
+
+        case (int) 'x':
+            nav_cmd_x();
+            break;
+
+        case (int) 'p':
+            nav_cmd_p();
+            break;
+            
         case (int) ':':
             change_mode(2);
             break;
@@ -185,6 +364,44 @@ int Model::parse_nav_edit_mode(const int c) {
             break;
 
         case (int) '?':
+
+            break;
+
+        default:
+            cmd_buffer.append(1, c);
+
+            if (cmd_buffer.find("gg") != -1) {
+                nav_cmd_first_page();
+
+            } else if (cmd_buffer.find("w") != -1) {
+                if ((cmd_buffer.size() >= 2) && (cmd_buffer[cmd_buffer.size() - 2] == 'y')) {
+                    nav_cmd_yw();
+
+                } else if ((cmd_buffer.size() >= 3) && (cmd_buffer[cmd_buffer.size() - 2] == 'i') && (cmd_buffer[cmd_buffer.size() - 3] == 'd')){
+                    nav_cmd_diw();
+                } else {
+                    nav_cmd_w();
+                }
+
+            } else if (cmd_buffer.find("dd") != -1) { 
+                nav_cmd_dd();
+
+            } else if (cmd_buffer.find("y") != -1) { 
+                nav_cmd_y();
+
+            } else if (cmd_buffer.find("G") != -1) {
+                if ((cmd_buffer.size() == 1) || (std::isdigit(cmd_buffer[cmd_buffer.size() - 2]) == 0)) {
+                    nav_cmd_last_page();
+                } else {
+                    int pointer = cmd_buffer.size() - 2;
+
+                    while ((pointer > 0) && (std::isdigit(cmd_buffer[pointer]) != 0)) pointer--;
+                    if (std::isdigit(cmd_buffer[pointer]) == 0) pointer++;
+
+                    cmd_go_to_line(std::atoi(cmd_buffer.c_str() + pointer));
+                    view->update_console_info(current_mode, current_file, line_pointer, current_file_array.size());
+                }
+            }
 
             break;
     }
@@ -233,14 +450,7 @@ int Model::parse_cmd_input_mode(const int c) {
             } else if(cmd_buffer == "h") { // cmd 'h'
                 MyString help_message = "Welcome to vim-lile MyTextEditor\nThere is 4 work mode";
             } else { // cmd <num>
-                int num = std::atoi(cmd_buffer.c_str());
-
-                if ((num > 0) && (num <= current_file_array.size())) {
-                    line_pointer = num - 1;
-                    adapter->set_cursor(view->update_screen(current_file_array, num - 1, 1, current_file_array.size()), 1);
-                }
-
-                cmd_buffer.clear();
+                cmd_go_to_line(std::atoi(cmd_buffer.c_str()));
                 view->update_console_info(current_mode, current_file, cmd_buffer, line_pointer, current_file_array.size());
             }
 
@@ -276,6 +486,70 @@ int Model::parse_search_mode(const int c) {
 //         adapter->print_char('\t', adapter->get_cursor_y(), adapter->get_cursor_x() + 1);
 //         break;
 
+
+// ****** OTHER COMMANDS ****** //
+
+void Model::init() {
+    current_file_array.clear();
+    line_pointer = 0;
+    current_file = "no open file";
+
+    current_file_array.push_back("");
+}
+
+void Model::change_mode(int new_mode) {
+    switch (new_mode) {
+        case 0:
+            adapter->nav_edit_mode();
+            current_mode = "> Navigation mode <";
+            view->update_console_info(current_mode, current_file, line_pointer, current_file_array.size());
+            break;
+
+        case 1:
+
+            break;
+        
+        case 2:
+            adapter->cmd_mode();
+            current_mode = "> Command mode <";
+            view->update_console_info(current_mode, current_file, cmd_buffer, line_pointer, current_file_array.size());
+            break;
+
+        case 3: 
+            adapter->cmd_mode();
+            current_mode = "> Search mode <";
+            view->update_console_info(current_mode, current_file, cmd_buffer, line_pointer, current_file_array.size());
+            break;
+
+        default:
+            return;
+    }
+
+    mode = new_mode;
+    cmd_buffer.clear();
+}
+
+void Model::find_word(MyString& line, int position, int& start, int& end) {
+    int _start = position, _end = position;
+
+    while ((_start > 0) && (line[_start - 1] != ' ')) {
+        _start--;
+    }
+
+    if (position >= (line.length() - 1)) {
+        _end = position;
+    } else {
+        while ((_end < line.length()) && (line[_end] != ' ')) {
+            _end++;
+        }
+
+        if (_end == line.length()) _end--;
+    }
+
+    start = _start;
+    end = _end;
+}
+
 int Model::read_file() {
     std::fstream file(current_file.c_str());
 
@@ -300,7 +574,7 @@ int Model::read_file() {
     return 1;
 }
 
-int Model::save_to_file(MyString filename) {
+int Model::save_to_file(MyString& filename) {
     std::ofstream file(filename.c_str());
     
     if (!file.is_open()) {

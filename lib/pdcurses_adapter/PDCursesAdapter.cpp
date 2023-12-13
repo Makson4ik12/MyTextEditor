@@ -80,6 +80,18 @@ void PDCursesAdapter::clear_main_window() {
     wrefresh(this->text_window);
 }
 
+void PDCursesAdapter::clear_line(int line_idy) {
+	int x = this->get_cursor_x(), y = this->get_cursor_y();
+
+    set_cursor(1, 1);
+    wmove(this->text_window, line_idy, 0);
+    wclrtoeol(this->text_window);
+    set_cursor(x, y);
+	box(this->text_window, 0, 0);
+
+    wrefresh(this->text_window);
+}
+
 void PDCursesAdapter::nav_edit_mode() {
     noecho(); // Отключение отображения вводимых символов
     keypad(this->text_window, TRUE); // Включение обработки специальных клавиш

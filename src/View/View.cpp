@@ -46,6 +46,19 @@ void View::update_console_info(MyString& mode_name, MyString& filename, MyString
     adapter->print_status(info);
 }
 
+void View::update_line(MyString& line, int line_number, int cursor_idx) {
+    adapter->clear_line(line_number);
+
+    if (line.size() > adapter->x_max) {
+        MyString tmp = line.substr(0, adapter->x_max);
+        adapter->print_string(tmp, line_number, 1);
+    } else {
+        adapter->print_string(line, line_number, 1);
+    }
+
+    adapter->set_cursor(line_number, cursor_idx);
+}
+
 int View::update_screen(std::vector<MyString>& text, int current_line, int direction, int lines_total) {
     adapter->clear_main_window();   
 
@@ -70,4 +83,35 @@ int View::update_screen(std::vector<MyString>& text, int current_line, int direc
     }
 
     return (current_line % adapter->y_max) + 1;
+}
+
+int View::page_up(int line_pointer, std::vector<MyString>& current_file_array) {
+    int current_page = line_pointer / adapter->y_max;
+    int ret = line_pointer;
+
+    if (current_page != 0) {
+        update_screen(current_file_array, adapter->y_max * (current_page - 1), 1, current_file_array.size());
+        ret = adapter->y_max * (current_page - 1);
+    } else {
+        adapter->set_cursor(1, 1);
+        update_screen(current_file_array, 0, 1, current_file_array.size());
+        ret = 0;   
+    }
+
+    return ret;
+}
+
+int View::page_down(int line_pointer, std::vector<MyString>& current_file_array) {
+    int current_page = line_pointer / adapter->y_max;
+    int ret = line_pointer;
+
+    if (current_page != (current_file_array.size() / adapter->y_max)) {
+        update_screen(current_file_array, adapter->y_max * (current_page + 1), 1, current_file_array.size());
+        ret = adapter->y_max * (current_page + 1);
+    } else {
+        adapter->set_cursor(1, 1);
+        ret = adapter->y_max * (current_page);
+    }
+
+    return ret;
 }

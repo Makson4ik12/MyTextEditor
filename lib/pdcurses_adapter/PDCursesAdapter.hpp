@@ -22,6 +22,7 @@ class PDCursesAdapter {
     void set_cursor (const int y, const int x);
     void del_char();
     void clear_main_window();
+    void clear_line(int line_idy);
 
     void nav_edit_mode();
     void cmd_mode();

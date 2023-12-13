@@ -304,8 +304,12 @@ void MyString::erase(int index, const int count)
 {
     validateArgs((index < 0) || (index >= buffer_length_) || (count <= 0), "Exception: index or count is wrong");
 
-    for (int i = index, j = index + count; i < (index + count); i++, j++){
-        mystring_buffer_[i] = mystring_buffer_[j];
+    // for (int i = index, j = index + count; i < (index + count); i++, j++){
+    //     mystring_buffer_[i] = mystring_buffer_[j];
+    // }
+
+    for (int i = index + count; i < buffer_length_; i++) {
+        mystring_buffer_[index++] = mystring_buffer_[i];
     }
 
     buffer_length_ -= count;
