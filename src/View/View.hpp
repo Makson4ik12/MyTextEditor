@@ -23,9 +23,10 @@ class View {
     int page_up(int line_pointer, std::vector<MyString>& current_file_array);
     int page_down(int line_pointer, std::vector<MyString>& current_file_array);
 
-    void update_console_info(MyString& mode_name, MyString& filename, int line_number, int lines_total);
-    void update_console_info(MyString& mode_name, MyString& filename, MyString& cmd, int line_number, int lines_total);
+    void update_console_info(MyString& mode_name, MyString& filename, int line_number, int lines_total, int column_num, int column_total);
+    void update_console_info(MyString& mode_name, MyString& filename, MyString cmd_name, MyString& cmd, int line_number, int lines_total, int column_num, int column_total);
     void update_line(MyString& line, int line_number, int cursor_idx);
+    void update_line(MyString& line, int line_number, int cursor_idx, int col_pointer);
     void clear_screen();
 
     private:

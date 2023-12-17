@@ -16,6 +16,10 @@ class Controller {
     private:
     PDCursesAdapter* adapter;
     Model* model;
+    
+    int parse_cmd_input_mode(const int c);
+    int parse_search_mode(const int c);
+    int parse_nav_edit_mode(const int c);
 };
 
 #endif

@@ -16,7 +16,7 @@ void View::clear_screen() {
     adapter->set_cursor(1, 1);
 }
 
-void View::update_console_info(MyString& mode_name, MyString& filename, int line_number, int lines_total) {
+void View::update_console_info(MyString& mode_name, MyString& filename, int line_number, int lines_total, int column_num, int column_total) {
     MyString info(" ");
     info += mode_name.c_str();
     info += " | ";
@@ -25,15 +25,19 @@ void View::update_console_info(MyString& mode_name, MyString& filename, int line
     info += MyString(std::to_string(line_number + 1));
     info += "/"; 
     info += MyString(std::to_string(lines_total));
+    info += " | Col ";
+    info += MyString(std::to_string(column_num + 1));
+    info += "/"; 
+    info += MyString(std::to_string(column_total));
     info += " ";
 
     adapter->print_status(info);
 }
 
-void View::update_console_info(MyString& mode_name, MyString& filename, MyString& cmd, int line_number, int lines_total) {
+void View::update_console_info(MyString& mode_name, MyString& filename, MyString cmd_name, MyString& cmd, int line_number, int lines_total, int column_num, int column_total) {
     MyString info(" ");
     info += mode_name.c_str();
-    info += " | cmd: ";
+    info += cmd_name.c_str();
     info += cmd.c_str();
     info += " | ";
     info += filename.c_str();
@@ -41,6 +45,10 @@ void View::update_console_info(MyString& mode_name, MyString& filename, MyString
     info += MyString(std::to_string(line_number + 1));
     info += "/"; 
     info += MyString(std::to_string(lines_total));
+    info += " | Col ";
+    info += MyString(std::to_string(column_num + 1));
+    info += "/"; 
+    info += MyString(std::to_string(column_total));
     info += " ";
 
     adapter->print_status(info);
@@ -49,14 +57,44 @@ void View::update_console_info(MyString& mode_name, MyString& filename, MyString
 void View::update_line(MyString& line, int line_number, int cursor_idx) {
     adapter->clear_line(line_number);
 
-    if (line.size() > adapter->x_max) {
-        MyString tmp = line.substr(0, adapter->x_max);
+    if (cursor_idx >= adapter->x_max) {
+        MyString tmp = line.substr(cursor_idx - adapter->x_max + 1, adapter->x_max);
         adapter->print_string(tmp, line_number, 1);
+        adapter->set_cursor(line_number, adapter->x_max);
     } else {
-        adapter->print_string(line, line_number, 1);
+        if (line.size() >= adapter->x_max) {
+            MyString tmp = line.substr(cursor_idx, adapter->x_max);
+            adapter->print_string(tmp, line_number, 1);
+        } else {
+            adapter->print_string(line, line_number, 1);
+        }
+        
+        adapter->set_cursor(line_number, cursor_idx);
+    }
+}
+
+void View::update_line(MyString& line, int line_number, int cursor_idx, int col_pointer) {
+    adapter->clear_line(line_number);
+
+    if (line.size() == 0) {
+        adapter->set_cursor(line_number, cursor_idx);
+        return;
     }
 
-    adapter->set_cursor(line_number, cursor_idx);
+    int start = col_pointer - cursor_idx + 1;
+    int count = adapter->x_max;
+    int cursor = cursor_idx;
+
+    if (((start + count) > line.size()) && (line.size() > adapter->x_max)) {//
+        while((start + count) > line.size()) (start--, cursor++);
+    } else if (line.size() < adapter->x_max){
+        count = line.size() - start;
+    }
+
+    MyString tmp = line.substr(start, count);
+    adapter->print_string(tmp, line_number, 1);
+
+    adapter->set_cursor(line_number, cursor);
 }
 
 int View::update_screen(std::vector<MyString>& text, int current_line, int direction, int lines_total) {
