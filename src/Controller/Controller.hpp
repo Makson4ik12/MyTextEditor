@@ -20,6 +20,8 @@ class Controller {
     int parse_cmd_input_mode(const int c);
     int parse_search_mode(const int c);
     int parse_nav_edit_mode(const int c);
+    int parse_text_input_mode(const int c);
+    int parse_replace_char_mode(const int c);
 };
 
 #endif

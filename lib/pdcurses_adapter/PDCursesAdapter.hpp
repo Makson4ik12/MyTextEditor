@@ -24,10 +24,7 @@ class PDCursesAdapter {
     void clear_main_window();
     void clear_line(int line_idy);
 
-    void nav_edit_mode();
-    void cmd_mode();
-
-    int get_char() const;
+    int get_char();
     int get_cursor_x ();
     int get_cursor_y ();
 

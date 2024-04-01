@@ -3,6 +3,5 @@
 
 int main () {
     Controller controller;
-    
     controller.listen();
 }

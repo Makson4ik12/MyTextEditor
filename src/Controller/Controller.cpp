@@ -20,7 +20,7 @@ void Controller::listen() {
                 break;
 
             case 1:
-                model->parse_text_input_mode(c);
+                parse_text_input_mode(c);
                 break;
             
             case 2:
@@ -33,6 +33,10 @@ void Controller::listen() {
             
             case 4: 
                 parse_search_mode(c);
+                break;
+            
+            case 5: 
+                parse_replace_char_mode(c);
                 break;
         }
     }
@@ -56,11 +60,11 @@ int Controller::parse_nav_edit_mode(const int c) {
             model->nav_cmd_key_right();
             break;
 
-        case 339: // PAGE_UP
+        case 339:
             model->nav_cmd_page_up();
             break;
 
-        case 338: // PAGE_DOWN
+        case 338: 
             model->nav_cmd_page_down();
             break;
 
@@ -96,6 +100,10 @@ int Controller::parse_nav_edit_mode(const int c) {
             model->change_mode(4);
             break;
 
+        case (int) 'r':
+            model->change_mode(5);
+            break;
+
         default:
             model->nav_cmd_default(c);
 
@@ -105,17 +113,85 @@ int Controller::parse_nav_edit_mode(const int c) {
     return 0;
 }
 
-int Controller::parse_cmd_input_mode(const int c) {
-    switch (c) {        
-        case 27: // ESC
+int Controller::parse_text_input_mode(const int c) {
+    switch (c) {   
+        case 27: 
             model->cmd_esc();
             break;
 
-        case '\n': // Enter
+        case KEY_UP:
+            model->nav_cmd_key_up();
+            break;
+
+        case KEY_DOWN:
+            model->nav_cmd_key_down();
+            break;
+
+        case KEY_LEFT:
+            model->nav_cmd_key_left();
+            break;
+
+        case KEY_RIGHT:
+            model->nav_cmd_key_right();
+            break;
+
+        case 339:
+            model->nav_cmd_page_up();
+            break;
+
+        case 338: 
+            model->nav_cmd_page_down();
+            break;
+
+        case (int) '\n': 
+            model->text_input_enter();
+            break;
+
+        case (int) '\b': 
+            model->text_input_backspace();
+            break;
+
+        case KEY_DC: 
+            model->text_input_delete();
+            break;
+
+        case (int) '\t': 
+            model->text_input_tab();
+            break;
+
+        default:
+            model->text_input_cmd_default(c);
+            break;
+    }
+
+    return 0;
+}
+
+int Controller::parse_replace_char_mode(const int c) {
+    switch (c) {   
+        case 27: 
+            model->cmd_esc();
+            break;
+
+        default:
+            model->replace_char(c);
+            break;
+    }
+
+    return 0;
+}
+
+int Controller::parse_cmd_input_mode(const int c) {
+    switch (c) {        
+        case 27:
+            model->cmd_esc();
+            break;
+
+        case '\n': 
             model->cmd_enter();
             break;
 
-        case '\b': // Backspace
+        case '\b': 
             model->cmd_backspace(" | cmd: ");
             break;
         
@@ -129,11 +205,11 @@ int Controller::parse_cmd_input_mode(const int c) {
 
 int Controller::parse_search_mode(const int c) {
     switch (c) {        
-        case 27: // ESC
+        case 27: 
             model->cmd_esc();
             break;
 
-        case '\n': // Enter
+        case '\n': 
             if (model->mode == 3) {
                 model->cmd_search1();
             } else {
@@ -141,7 +217,7 @@ int Controller::parse_search_mode(const int c) {
             }
             break;
 
-        case '\b': // Backspace
+        case '\b': 
             if (model->mode == 3) {
                 model->cmd_backspace(" | /");
             } else {

@@ -2,18 +2,20 @@
 
 View::View(PDCursesAdapter* adapter) {
     this->adapter = adapter;
-    log = new Log();
-
     this->adapter->init_windows();
 }
 
 View::~View() {
-    delete log;
+    
 }
 
 void View::clear_screen() {
     adapter->clear_main_window();   
     adapter->set_cursor(1, 1);
+}
+
+void View::update_cursor(int cursor_idy, int cursor_idx) {
+    adapter->set_cursor(cursor_idy, cursor_idx);
 }
 
 void View::update_console_info(MyString& mode_name, MyString& filename, int line_number, int lines_total, int column_num, int column_total) {
@@ -85,9 +87,9 @@ void View::update_line(MyString& line, int line_number, int cursor_idx, int col_
     int count = adapter->x_max;
     int cursor = cursor_idx;
 
-    if (((start + count) > line.size()) && (line.size() > adapter->x_max)) {//
+    if (((start + count) > line.size()) && (line.size() > adapter->x_max)) {
         while((start + count) > line.size()) (start--, cursor++);
-    } else if (line.size() < adapter->x_max){
+    } else if (line.size() <= adapter->x_max){
         count = line.size() - start;
     }
 

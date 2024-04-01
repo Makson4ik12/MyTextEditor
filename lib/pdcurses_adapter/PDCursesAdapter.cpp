@@ -1,10 +1,10 @@
 #include "PDCursesAdapter.hpp"
 
 PDCursesAdapter::PDCursesAdapter () {
-	// raw();	//Берём управление клавиатурой на себя
-	initscr(); // Инициализация curses
-    cbreak(); // Включение режима посимвольного ввода
-    noecho(); // Отключение отображения вводимых символов
+	initscr(); 
+    cbreak(); 
+    noecho(); 
+    keypad(stdscr, TRUE); 
 
     getmaxyx(stdscr, y_max, x_max);
     y_max -= 3;
@@ -14,7 +14,7 @@ PDCursesAdapter::PDCursesAdapter () {
 PDCursesAdapter::~PDCursesAdapter () {
 	delwin(this->text_window);
 	delwin(this->bottom_window);
-    endwin();	// Выход из curses-режима. Обязательная команда.
+    endwin();
 }
 
 int PDCursesAdapter::get_cursor_x() {
@@ -34,7 +34,7 @@ void PDCursesAdapter::init_windows() {
 	int max_y, max_x;
     getmaxyx(stdscr, max_y, max_x);
 
-    this->text_window = newwin(max_y - 1, max_x, 0, 0); // w, w, sy, sx
+    this->text_window = newwin(max_y - 1, max_x, 0, 0);
     scrollok(this->text_window, TRUE);
     box(this->text_window, 0, 0);
 	keypad(this->text_window, TRUE);
@@ -47,7 +47,7 @@ void PDCursesAdapter::init_windows() {
 	wrefresh(this->text_window);
 }
 
-int PDCursesAdapter::get_char() const {
+int PDCursesAdapter::get_char() {
 	return wgetch(this->text_window);
 }
 
@@ -69,13 +69,13 @@ void PDCursesAdapter::print_status(MyString& text) {
 }
 
 void PDCursesAdapter::del_char() {
-	mvwaddch(text_window, get_cursor_y(), get_cursor_x() - 1, ' ');  // Вставляем пробел в текущем месте
-	wmove(text_window, get_cursor_y(), get_cursor_x() - 1);  // Перемещаем курсор влево
+	mvwaddch(text_window, get_cursor_y(), get_cursor_x() - 1, ' '); 
+	wmove(text_window, get_cursor_y(), get_cursor_x() - 1); 
 	wrefresh(text_window);
 }
 
 void PDCursesAdapter::clear_main_window() {
-    wclear(text_window); // Очистка всего окна
+    wclear(text_window);
     box(this->text_window, 0, 0);
     wrefresh(this->text_window);
 }
@@ -90,14 +90,4 @@ void PDCursesAdapter::clear_line(int line_idy) {
 	box(this->text_window, 0, 0);
 
     wrefresh(this->text_window);
-}
-
-void PDCursesAdapter::nav_edit_mode() {
-    noecho(); // Отключение отображения вводимых символов
-    keypad(this->text_window, TRUE); // Включение обработки специальных клавиш
-}
-
-void PDCursesAdapter::cmd_mode() {
-    noecho(); // Отключение отображения вводимых символов
-    keypad(stdscr, TRUE); // Включение обработки специальных клавиш
 }

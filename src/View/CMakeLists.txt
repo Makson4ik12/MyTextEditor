@@ -12,5 +12,4 @@ target_link_libraries(view
   PRIVATE
     pdcursesadapter
     mystring
-    log
   )

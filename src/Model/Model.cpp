@@ -5,6 +5,7 @@ Model::Model(PDCursesAdapter* adapter) {
     view = new View(adapter);
 
     init();
+    create_help_file();
 }
 
 Model::~Model() {
@@ -15,38 +16,35 @@ Model::~Model() {
 // ****** NAVIGATION MODE COMMANDS ****** //
 
 void Model::nav_cmd_key_up() {
-    // если не last line
     if (line_pointer != 0) {
         int y = adapter->get_cursor_y() - 1;
         int x = column_pointer;
         line_pointer--;
         
-        // если вверху экрана - обновляем страницу
         if (adapter->get_cursor_y() == 1) {
-            view->update_screen(current_file_array, (line_pointer - adapter->y_max), -1, current_file_array.size());
+            view->update_screen(current_file_array, (line_pointer - adapter->y_max + 1), -1, current_file_array.size());
             y = adapter->y_max;
         } else if (x != (adapter->get_cursor_x() - 1))
             view->update_line(current_file_array[line_pointer + 1], y + 1, 0);
 
-        // если строка нулевая
         if (current_file_array[line_pointer].size() == 0){
-            adapter->set_cursor(y, 1);
+            view->update_cursor(y, 1);
             column_pointer = 0;
 
-        } else if (current_file_array[line_pointer].size() > x) { // если размер строки больше idx курсора
-            if (x > adapter->x_max){ // если курсора указывает на часть строки большей, чем размер терминала 
+        } else if (current_file_array[line_pointer].size() > x) {
+            if (x > adapter->x_max){
                 view->update_line(current_file_array[line_pointer], y, column_pointer);
             } else {
-                adapter->set_cursor(y, x + 1);
+                view->update_cursor(y, x + 1);
             }
 
-        } else if (current_file_array[line_pointer].size() <= x) { // если размер строки меньше idx курсора
+        } else if (current_file_array[line_pointer].size() <= x) {
             column_pointer = current_file_array[line_pointer].size() - 1;
 
-            if (column_pointer > adapter->x_max){ // если курсора указывает на часть строки большей, чем размер терминала 
+            if (column_pointer >= adapter->x_max){
                 view->update_line(current_file_array[line_pointer], y, column_pointer);
             } else {
-                adapter->set_cursor(y, column_pointer + 1);
+                view->update_cursor(y, column_pointer + 1);
             }
 
         }
@@ -56,38 +54,35 @@ void Model::nav_cmd_key_up() {
 }
 
 void Model::nav_cmd_key_down() {
-    // если не last line
     if (line_pointer != (current_file_array.size() - 1)) {
         int y = adapter->get_cursor_y() + 1;
         int x = column_pointer;
         line_pointer++;
         
-        // если внизу экрана - обновляем страницу
         if (adapter->get_cursor_y() == adapter->y_max) {
             view->update_screen(current_file_array, line_pointer, -1, current_file_array.size());
             y = 1;
         } else if (x != (adapter->get_cursor_x() - 1))
             view->update_line(current_file_array[line_pointer - 1], y - 1, 0);
 
-        // если строка нулевая
         if (current_file_array[line_pointer].size() == 0){
-            adapter->set_cursor(y, 1);
+            view->update_cursor(y, 1);
             column_pointer = 0;
 
-        } else if (current_file_array[line_pointer].size() > x) { // если размер строки больше idx курсора
-            if (x > adapter->x_max){ // если курсора указывает на часть строки большей, чем размер терминала 
+        } else if (current_file_array[line_pointer].size() > x) { 
+            if (x > adapter->x_max){ 
                 view->update_line(current_file_array[line_pointer], y, column_pointer);
             } else {
-                adapter->set_cursor(y, x + 1);
+                view->update_cursor(y, x + 1);
             }
 
-        } else if (current_file_array[line_pointer].size() <= x) { // если размер строки меньше idx курсора
+        } else if (current_file_array[line_pointer].size() <= x) { 
             column_pointer = current_file_array[line_pointer].size() - 1;
 
-            if (column_pointer > adapter->x_max){ // если курсора указывает на часть строки большей, чем размер терминала 
+            if (column_pointer > adapter->x_max){ 
                 view->update_line(current_file_array[line_pointer], y, column_pointer);
             } else {
-                adapter->set_cursor(y, column_pointer + 1);
+                view->update_cursor(y, column_pointer + 1);
             }
 
         }
@@ -100,7 +95,7 @@ void Model::nav_cmd_key_left() {
     if ((column_pointer != 0) && (adapter->get_cursor_x() == 1)) {
         column_pointer--;
         view->update_line(current_file_array[line_pointer], adapter->get_cursor_y(), column_pointer);
-        adapter->set_cursor(adapter->get_cursor_y(), 1);
+        view->update_cursor(adapter->get_cursor_y(), 1);
 
     } else if (adapter->get_cursor_x() == 1) {
         if ((line_pointer - 1) >= 0) {
@@ -118,16 +113,16 @@ void Model::nav_cmd_key_left() {
                 view->update_line(current_file_array[line_pointer], y, column_pointer);
             } else {
                 if (current_file_array[line_pointer].size() != 0) {
-                    adapter->set_cursor(y, current_file_array[line_pointer].size());
+                    view->update_cursor(y, current_file_array[line_pointer].size());
                     column_pointer = current_file_array[line_pointer].size() - 1;
                 } else {
-                    adapter->set_cursor(y, 1);
+                    view->update_cursor(y, 1);
                     column_pointer = 0;
                 }
             }
         }
     } else {
-        adapter->set_cursor(adapter->get_cursor_y(), adapter->get_cursor_x() - 1);
+        view->update_cursor(adapter->get_cursor_y(), adapter->get_cursor_x() - 1);
         column_pointer--;
     }
 
@@ -141,21 +136,20 @@ void Model::nav_cmd_key_right() {
         column_pointer++;
         view->update_line(line, adapter->get_cursor_y(), column_pointer);
         
-    } else if ((column_pointer + 1) >= line.size()) {
+    } else if (((column_pointer + 1) >= line.size()) && ((line_pointer + 1) < current_file_array.size())) {
         if ((column_pointer + 1) >= adapter->x_max) view->update_line(line, adapter->get_cursor_y(), 0);
         line_pointer++;
 
-        // если конец терминала
         if (adapter->get_cursor_y() == adapter->y_max) {
             view->update_screen(current_file_array, line_pointer, 1, current_file_array.size());
         } else {
-            adapter->set_cursor(adapter->get_cursor_y() + 1, 1);
+            view->update_cursor(adapter->get_cursor_y() + 1, 1);
         }
 
         column_pointer = 0;
-    } else {
+    } else if ((column_pointer + 1) < line.size()){
         column_pointer++;
-        adapter->set_cursor(adapter->get_cursor_y(), adapter->get_cursor_x() + 1);
+        view->update_cursor(adapter->get_cursor_y(), adapter->get_cursor_x() + 1);
     }
 
     view->update_console_info(current_mode, current_file, line_pointer, current_file_array.size(), column_pointer, current_file_array[line_pointer].size());
@@ -184,7 +178,7 @@ void Model::nav_cmd_move_start() {
     if (column_pointer > adapter->x_max)
         view->update_line(current_file_array[line_pointer], adapter->get_cursor_y(), 0);
     
-    adapter->set_cursor(adapter->get_cursor_y(), 1);
+    view->update_cursor(adapter->get_cursor_y(), 1);
     column_pointer = 0;
 
     cmd_buffer.clear();
@@ -194,9 +188,9 @@ void Model::nav_cmd_move_start() {
 void Model::nav_cmd_move_end() {
     if (current_file_array[line_pointer].size() <= adapter->x_max) {
         if (current_file_array[line_pointer].size() != 0) {
-            adapter->set_cursor(adapter->get_cursor_y(), current_file_array[line_pointer].size());
+            view->update_cursor(adapter->get_cursor_y(), current_file_array[line_pointer].size());
         } else {
-            adapter->set_cursor(adapter->get_cursor_y(), 1);
+            view->update_cursor(adapter->get_cursor_y(), 1);
         }
         
     } else {
@@ -213,16 +207,22 @@ void Model::nav_cmd_move_end() {
 }
 
 void Model::nav_cmd_x() {
+    if(column_pointer == (current_file_array[line_pointer].size() - 2)) {
+        cmd_buffer.clear();
+        return;
+    }
+
     if ((column_pointer >= 0) && ((column_pointer + 1) < (current_file_array[line_pointer].size()))) {
         current_file_array[line_pointer].erase(column_pointer + 1, 1);
         view->update_line(current_file_array[line_pointer], adapter->get_cursor_y(), adapter->get_cursor_x(), column_pointer);
     }
 
+    view->update_console_info(current_mode, current_file, line_pointer, current_file_array.size(), column_pointer, current_file_array[line_pointer].size());
     cmd_buffer.clear();
 }
 
-void Model::nav_cmd_dd() {
-    nav_cmd_y();
+void Model::nav_cmd_delete_line(bool is_copy) {
+    if (is_copy) nav_cmd_y();
 
     if (current_file_array[line_pointer].size() != 0) {
         current_file_array[line_pointer].clear();
@@ -231,7 +231,7 @@ void Model::nav_cmd_dd() {
     current_file_array.erase(current_file_array.begin() + line_pointer);
     
     if (current_file_array.size() == 0) {
-        current_file_array.push_back("");
+        current_file_array.push_back(" ");
         line_pointer = 0;
     } else if (line_pointer >= current_file_array.size()) {
         line_pointer--;
@@ -239,7 +239,7 @@ void Model::nav_cmd_dd() {
 
     column_pointer = 0;
     view->update_screen(current_file_array, line_pointer, -1, current_file_array.size());
-    adapter->set_cursor(view->update_screen(current_file_array, line_pointer, -1, current_file_array.size()), 1);
+    view->update_cursor(view->update_screen(current_file_array, line_pointer, -1, current_file_array.size()), 1);
     view->update_console_info(current_mode, current_file, line_pointer, current_file_array.size(), column_pointer, current_file_array[line_pointer].size());
 
     cmd_buffer.clear();
@@ -247,7 +247,11 @@ void Model::nav_cmd_dd() {
 
 void Model::nav_cmd_y() {
     if (current_file_array[line_pointer].size() != 0) {
-        clipboard = current_file_array[line_pointer];
+        if (current_file_array[line_pointer].size() == 1) {
+            clipboard = "";
+        } else {
+            clipboard = current_file_array[line_pointer].substr(0, current_file_array[line_pointer].size() - 1);
+        }
     }
 }
 
@@ -271,7 +275,7 @@ void Model::nav_cmd_yw() {
 void Model::nav_cmd_diw() {
     MyString& line = current_file_array[line_pointer];
 
-    if ((line.size() == 0) || (line[adapter->get_cursor_x() - 1] == ' ')) {
+    if ((line.size() == 0) || (line[column_pointer] == ' ')) {
         cmd_buffer.clear();
         return;
     }
@@ -293,17 +297,24 @@ void Model::nav_cmd_diw() {
         cursor_idx = 1;
     } else if (column_pointer > line.size()) {
         column_pointer = line.size() - 1;
-        cursor_idx = line.size();
+        cursor_idx = adapter->x_max;
     }
 
+    
+    if ((line.size() == 0) || (line[line.size() - 1] != ' '))
+        line.append(" ");
+
     view->update_line(current_file_array[line_pointer], adapter->get_cursor_y(),  cursor_idx, column_pointer);
+    view->update_console_info(current_mode, current_file, line_pointer, current_file_array.size(), column_pointer, current_file_array[line_pointer].size());
     cmd_buffer.clear();
 }
 
 void Model::nav_cmd_p() {
     if (clipboard.size() != 0) {
-        if ((current_file_array[line_pointer].size() == 0) || (column_pointer == (current_file_array[line_pointer].size() - 1))) {
-            current_file_array[line_pointer].append(clipboard.c_str());
+        if (current_file_array[line_pointer].size() == 1) {
+            current_file_array[line_pointer].insert(0, clipboard.c_str());
+        } else if (column_pointer == (current_file_array[line_pointer].size() - 1)) {
+            current_file_array[line_pointer].insert(column_pointer, clipboard.c_str());
         } else {
             current_file_array[line_pointer].insert(column_pointer + 1, clipboard.c_str());
         }
@@ -312,6 +323,7 @@ void Model::nav_cmd_p() {
     }
 
     cmd_buffer.clear();
+    view->update_console_info(current_mode, current_file, line_pointer, current_file_array.size(), column_pointer, current_file_array[line_pointer].size());
 }
 
 void Model::nav_cmd_w(){
@@ -354,9 +366,9 @@ void Model::nav_cmd_w(){
             line_pointer = tmp_line;
             
             if ((column_pointer + 1) > adapter->x_max) {
-                adapter->set_cursor(cursor_idy, adapter->x_max);
+                view->update_cursor(cursor_idy, adapter->x_max);
             } else {
-                adapter->set_cursor(cursor_idy, column_pointer + 1);
+                view->update_cursor(cursor_idy, column_pointer + 1);
             }
 
             view->update_line(current_file_array[line_pointer], adapter->get_cursor_y() , adapter->get_cursor_x(), column_pointer);
@@ -410,9 +422,9 @@ void Model::nav_cmd_b() {
             line_pointer = tmp_line;
             
             if ((column_pointer + 1) > adapter->x_max) {
-                adapter->set_cursor(cursor_idy, adapter->x_max);
+                view->update_cursor(cursor_idy, adapter->x_max);
             } else {
-                adapter->set_cursor(cursor_idy, column_pointer + 1);
+                view->update_cursor(cursor_idy, column_pointer + 1);
             }
 
             view->update_line(current_file_array[line_pointer], adapter->get_cursor_y() , adapter->get_cursor_x(), column_pointer);
@@ -451,8 +463,15 @@ void Model::nav_cmd_default(char c) {
             nav_cmd_w();
         }
 
+    } else if (cmd_buffer.find("i") != -1) {
+        if ((cmd_buffer.size() >= 2) && (cmd_buffer[cmd_buffer.size() - 2] == 'd')) {
+            
+        } else {
+            change_mode(1);
+        }
+
     } else if (cmd_buffer.find("dd") != -1) { 
-        nav_cmd_dd();
+        nav_cmd_delete_line(1);
 
     } else if (cmd_buffer.find("y") != -1) { 
         nav_cmd_y();
@@ -469,6 +488,25 @@ void Model::nav_cmd_default(char c) {
             cmd_go_to_line(std::atoi(cmd_buffer.c_str() + pointer));
             view->update_console_info(current_mode, current_file, line_pointer, current_file_array.size(), column_pointer, current_file_array[line_pointer].size());
         }
+
+    } else if (cmd_buffer.find("I") != -1) { 
+        nav_cmd_move_start();
+        change_mode(1);
+
+    } else if (cmd_buffer.find("S") != -1) { 
+        nav_cmd_move_end();
+        change_mode(1);
+
+    } else if (cmd_buffer.find("A") != -1) { 
+        current_file_array[line_pointer] = " ";
+        column_pointer = 0;
+        view->update_line(current_file_array[line_pointer], adapter->get_cursor_y(), 1, column_pointer);
+        change_mode(1);
+
+    } else if (cmd_buffer.find("r") != -1) { 
+
+        change_mode(1);
+
     }
 }
 
@@ -479,7 +517,7 @@ void Model::nav_cmd_default(char c) {
 void Model::cmd_go_to_line(int line) {
     if ((line > 0) && (line <= current_file_array.size())) {
         line_pointer = line - 1;
-        adapter->set_cursor(view->update_screen(current_file_array, line - 1, 1, current_file_array.size()), 1);
+        view->update_cursor(view->update_screen(current_file_array, line - 1, 1, current_file_array.size()), 1);
     }
 
     cmd_buffer.clear();
@@ -497,6 +535,7 @@ void Model::cmd_enter() {
         current_file = cmd_buffer.substr(2, cmd_buffer.length() - 2);
         if(!read_file()) return;
         change_mode(0);
+
     } else if((cmd_buffer == "x") || (cmd_buffer == "wq!")) {  // cmd 'x' & 'wq!'
         if(!save_to_file(current_file)) return;
 
@@ -504,21 +543,28 @@ void Model::cmd_enter() {
         change_mode(0);
 
         view->clear_screen();
-    } else if(cmd_buffer == "w") { // cmd 'w'
+
+    } else if(cmd_buffer == "w") { 
         if(!save_to_file(current_file)) return;
         change_mode(0);
-    } else if((cmd_buffer.find("w ") == 0) && (cmd_buffer.length() > 2)) { // cmd 'w <filename>'
+
+    } else if((cmd_buffer.find("w ") == 0) && (cmd_buffer.length() > 2)) {
         current_file = cmd_buffer.substr(2, cmd_buffer.length() - 2);
         if(!save_to_file(current_file)) return;
         change_mode(0);
-    } else if(cmd_buffer == "q") { // cmd 'q'
+
+    } else if(cmd_buffer == "q") { 
         if(!save_to_file(current_file)) return;
         exit(0);
-    } else if(cmd_buffer == "q!") { // cmd 'q!'
+
+    } else if(cmd_buffer == "q!") {
         exit(0);
-    } else if(cmd_buffer == "h") { // cmd 'h'
-        MyString help_message = "Welcome to vim-lile MyTextEditor\nThere is 4 work mode";
-    } else { // cmd <num>
+
+    } else if(cmd_buffer == "h") { 
+        cmd_buffer.clear();
+        view->update_console_info(current_mode, current_file," | For help open file help.txt (cmd: o help.txt)", cmd_buffer, line_pointer, current_file_array.size(), column_pointer, current_file_array[line_pointer].size());
+
+    } else { 
         cmd_go_to_line(std::atoi(cmd_buffer.c_str()));
         view->update_console_info(current_mode, current_file," | cmd: ", cmd_buffer, line_pointer, current_file_array.size(), column_pointer, current_file_array[line_pointer].size());
     }
@@ -534,6 +580,8 @@ void Model::cmd_backspace(MyString mode_name) {
 }
 
 void Model::cmd_default(MyString mode_name, char c) {
+    if (std::isprint(c) == 0 ) return;
+
     if (cmd_buffer.length() <= 60) {
         cmd_buffer.append(1, c);
     }
@@ -566,7 +614,6 @@ void Model::cmd_search_back(MyString cmd) {
 }
 
 void Model::search(int mode, MyString text, int start_line, int end_line, int start_col, int end_col, MyString cmd) {
-    // search forward
     if (mode == 1) {
         int tmp_line = start_line;
         int tmp_col = start_col;
@@ -589,7 +636,7 @@ void Model::search(int mode, MyString text, int start_line, int end_line, int st
         if ((tmp_line != end_line)) {
             line_pointer = tmp_line;
             column_pointer = 0;
-            adapter->set_cursor(view->update_screen(current_file_array, line_pointer, -1, current_file_array.size()), 1);
+            view->update_cursor(view->update_screen(current_file_array, line_pointer, -1, current_file_array.size()), 1);
         }
 
         view->update_console_info(current_mode, current_file, cmd, cmd_buffer, line_pointer, current_file_array.size(), column_pointer, current_file_array[line_pointer].size());
@@ -616,7 +663,7 @@ void Model::search(int mode, MyString text, int start_line, int end_line, int st
         if (tmp_line >= 0) {
             line_pointer = tmp_line;
             column_pointer = 0;
-            adapter->set_cursor(view->update_screen(current_file_array, line_pointer, -1, current_file_array.size()), 1);
+            view->update_cursor(view->update_screen(current_file_array, line_pointer, -1, current_file_array.size()), 1);
         }
 
         view->update_console_info(current_mode, current_file, cmd, cmd_buffer, line_pointer, current_file_array.size(), column_pointer, current_file_array[line_pointer].size());
@@ -625,18 +672,107 @@ void Model::search(int mode, MyString text, int start_line, int end_line, int st
 
 
 
-// ****** PARSERS ****** //
+// ****** INPUT TEXT COMMANDS ****** //
 
-int Model::parse_text_input_mode(const int c) {
-    
-    return 0;
+void Model::text_input_cmd_default(char c) {
+    if (std::isprint(c) == 0 ) return;
+
+    current_file_array[line_pointer].insert(column_pointer, 1, c);
+    nav_cmd_key_right();
+    view->update_line(current_file_array[line_pointer], adapter->get_cursor_y(), adapter->get_cursor_x(), column_pointer);
+}
+
+void Model::text_input_backspace() {
+    if ((current_file_array[line_pointer].size() > 1) && (column_pointer != 0)) {
+        current_file_array[line_pointer].erase(column_pointer - 1, 1);
+        nav_cmd_key_left();
+        view->update_line(current_file_array[line_pointer], adapter->get_cursor_y(),adapter->get_cursor_x(),  column_pointer);
+
+    } else if (adapter->get_cursor_x() == 1) {
+        int cur_line = line_pointer;
+
+        if (((line_pointer - 1) >= 0) && (current_file_array[line_pointer].size() > 1)) { 
+            current_file_array[line_pointer - 1] = current_file_array[line_pointer - 1].substr(0, current_file_array[line_pointer - 1].size() - 1);
+            current_file_array[line_pointer - 1].append(current_file_array[line_pointer].c_str());
+        }
+
+        nav_cmd_delete_line(0);
+
+        if (line_pointer != cur_line) {
+            nav_cmd_move_end();
+        } else if ((line_pointer == cur_line) && ((line_pointer - 1) >= 0)) {
+            nav_cmd_key_up();
+            nav_cmd_move_end();
+        }
+    }
 }
     
-//     case (int) '\t':
-//         // tab handler
-//         adapter->print_char('\t', adapter->get_cursor_y(), adapter->get_cursor_x() + 1);
-//         break;
+void Model::text_input_delete() {
+    if ((current_file_array[line_pointer].size() > 1) && (column_pointer < (current_file_array[line_pointer].size() - 2))) {
+        nav_cmd_x();
+    } else {
+        if ((line_pointer + 1) <= (current_file_array.size() - 1)) {
+            int cur_lp = line_pointer;
+            int cur_colp = column_pointer;
+            int cur_idx = adapter->get_cursor_x();
+            int cur_idy = adapter->get_cursor_y();
 
+            current_file_array[line_pointer] = current_file_array[line_pointer].substr(0, current_file_array[line_pointer].size() - 1) + current_file_array[line_pointer + 1];
+
+            line_pointer++;
+
+            nav_cmd_delete_line(0);
+
+            if (cur_lp != line_pointer) {
+                nav_cmd_key_up();
+            }
+
+            column_pointer = cur_colp;
+            view->update_line(current_file_array[line_pointer], cur_idy, cur_idx, column_pointer);
+        }
+    }
+}
+
+void Model::text_input_enter() {
+    MyString to_next_line;
+
+    if ((current_file_array[line_pointer].size() == 1) || (column_pointer == (current_file_array[line_pointer].size() - 1))) {
+
+        to_next_line = " ";
+    } else {
+        to_next_line = current_file_array[line_pointer].substr(column_pointer, current_file_array[line_pointer].size() - column_pointer);
+        current_file_array[line_pointer] = current_file_array[line_pointer].substr(0, column_pointer) + " ";
+    }
+
+    if (line_pointer == (current_file_array.size() - 1)) {
+        current_file_array.push_back(to_next_line);
+    } else {
+        current_file_array.insert(current_file_array.begin() + line_pointer + 1, to_next_line);
+    }
+
+    nav_cmd_key_down();
+    nav_cmd_move_start();
+    view->update_cursor(view->update_screen(current_file_array, line_pointer, -1, current_file_array.size()), 1);
+    view->update_console_info(current_mode, current_file, line_pointer, current_file_array.size(), column_pointer, current_file_array[line_pointer].size());
+}
+
+void Model::text_input_tab() {
+    for (int i = 0; i < 3; i++) text_input_cmd_default(' ');
+}
+
+void Model::replace_char(char c) {
+    if (std::isprint(c) == 0 ) return;
+
+    MyString replacement(1, c);
+
+    current_file_array[line_pointer].replace(column_pointer, 1, replacement.c_str());
+
+    if (current_file_array[line_pointer][current_file_array[line_pointer].size() - 1] != ' ') {
+        current_file_array[line_pointer].append(" ");
+    }
+
+    view->update_line(current_file_array[line_pointer], adapter->get_cursor_y(), adapter->get_cursor_x(), column_pointer);
+}
 
 
 // ****** OTHER COMMANDS ****** //
@@ -645,8 +781,9 @@ void Model::init() {
     current_file_array.clear();
     line_pointer = 0;
     column_pointer = 0;
-    current_file = "no open file";
-    current_file_array.push_back("");
+    mode = 0;
+    current_file = "file is not open";
+    current_file_array.push_back(" ");
 
     change_mode(0);
 }
@@ -654,31 +791,33 @@ void Model::init() {
 void Model::change_mode(int new_mode) {
     switch (new_mode) {
         case 0:
-            adapter->nav_edit_mode();
             current_mode = "> Navigation mode <";
             view->update_console_info(current_mode, current_file, line_pointer, current_file_array.size(), column_pointer, current_file_array[line_pointer].size());
             break;
 
         case 1:
-
+            current_mode = "> Edit mode <";
+            view->update_console_info(current_mode, current_file, line_pointer, current_file_array.size(), column_pointer, current_file_array[line_pointer].size());
             break;
         
         case 2:
-            adapter->cmd_mode();
             current_mode = "> Command mode <";
             view->update_console_info(current_mode, current_file, " | cmd: ", cmd_buffer, line_pointer, current_file_array.size(), column_pointer, current_file_array[line_pointer].size());
             break;
 
         case 3: 
-            adapter->cmd_mode();
             current_mode = "> Search mode <";
             view->update_console_info(current_mode, current_file, " | /",  cmd_buffer, line_pointer, current_file_array.size(), column_pointer, current_file_array[line_pointer].size());
             break;
 
         case 4: 
-            adapter->cmd_mode();
             current_mode = "> Search mode <";
             view->update_console_info(current_mode, current_file, " | ?",  cmd_buffer, line_pointer, current_file_array.size(), column_pointer, current_file_array[line_pointer].size());
+            break;
+
+        case 5: 
+            current_mode = "> Edit mode | Replace char <";
+            view->update_console_info(current_mode, current_file, line_pointer, current_file_array.size(), column_pointer, current_file_array[line_pointer].size());
             break;
 
         default:
@@ -715,7 +854,7 @@ int Model::read_file() {
     std::fstream file(current_file.c_str());
 
     if (!file.is_open()) {
-        current_file = "no open file";
+        current_file = "file is not open";
         view->update_console_info(current_mode, current_file, " | cmd: ", cmd_buffer, line_pointer, current_file_array.size(), column_pointer, current_file_array[line_pointer].size());
         return 0;
     }
@@ -741,8 +880,6 @@ int Model::save_to_file(MyString& filename) {
     std::ofstream file(filename.c_str());
     
     if (!file.is_open()) {
-        view->log->print("not open");
-        view->log->print(filename.c_str());
         return 0;
     }
 
@@ -757,4 +894,73 @@ int Model::save_to_file(MyString& filename) {
     file.close();
 
     return 1;
+}
+
+void Model::create_help_file() {
+    std::ofstream file("help.txt");
+    
+    if (!file.is_open()) {
+        return;
+    }
+
+    file << "Welcome to MyTextEditor help page!" << std::endl << std::endl;
+    file << "There are 4 modes of operation and their corresponding commands" << std::endl << std::endl;
+    file << "1. Navigation mode commands && buttons" << std::endl;
+    file << "  - i	    Enter text before the cursor." << std::endl;
+    file << "  - I	    Go to the beginning of the line and start entering text." << std::endl;
+    file << "  - S	    Go to the end of the line and start typing." << std::endl;
+    file << "  - A	    Delete the contents of the row and start typing." << std::endl;
+    file << "  - r	    Replace one character under the cursor." << std::endl;
+    file << "  - :	    Activating the command input mode." << std::endl;
+    file << "  - /	    Activates search mode until the end of the document." << std::endl;
+    file << "  - ?	    Activates search mode until the start of the document." << std::endl;
+    file << "  - ^	    Moves the cursor to the start of the line." << std::endl;
+    file << "  - $	    Moves the cursor to the end of the line." << std::endl;
+    file << "  - w	    Move the cursor to the end of a word to the right of the cursor." << std::endl;
+    file << "  - b	    Move the cursor to the beginning of the word to the left of the cursor." << std::endl;
+    file << "  - x	    Delete the character after the cursor." << std::endl;
+    file << "  - diw    Delete the word under the cursor, including one space on the right." << std::endl;
+    file << "  - dd	    Copy and delete the current line." << std::endl;
+    file << "  - y	    Copy the current line." << std::endl;
+    file << "  - yw	    Copy the word under the cursor." << std::endl;
+    file << "  - p	    Insert after the cursor." << std::endl;
+    file << "  - NG	    Go to the line with the number N." << std::endl;
+    file << " ------------------------------------------------------------------------------------" << std::endl;
+    file << "  - RIGHT      Moves the cursor one position to the right." << std::endl;
+    file << "  - LEFT       Moves the cursor one position to the left." << std::endl;
+    file << "  - UP         Moves the cursor up one position." << std::endl;
+    file << "  - DOWN       Moves the cursor one position down." << std::endl;
+    file << "  - PAGE_UP    Raises the cursor one page." << std::endl;
+    file << "  - PAGE_DOWN  Moves the cursor down one page." << std::endl;
+    file << "  - gg         Moves the cursor to the first page of the text." << std::endl;
+    file << "  - G          Moves the cursor to the last page of the text." << std::endl << std::endl;
+    file << "2. Command mode commands" << std::endl;
+    file << "  - o <filename>   Open the file <filename>." << std::endl;
+    file << "  - x              Write to the current file and close it." << std::endl;
+    file << "  - w              Write to the current file." << std::endl;
+    file << "  - w <filename>   Write to file <filename>." << std::endl;
+    file << "  - q              Exit program." << std::endl;
+    file << "  - q!             Exit program without saving current file." << std::endl;
+    file << "  - wq!            Write to the current file and close it." << std::endl;
+    file << "  - num            Go to the line with the number <num>." << std::endl;
+    file << "  - h              Program help." << std::endl << std::endl;
+    file << "3. Text editor mode buttons" << std::endl;
+    file << "  - RIGHT      Moves the cursor one position to the right." << std::endl;
+    file << "  - LEFT       Moves the cursor one position to the left." << std::endl;
+    file << "  - UP         Moves the cursor up one position." << std::endl;
+    file << "  - DOWN       Moves the cursor one position down." << std::endl;
+    file << "  - PAGE_UP    Raises the cursor one page." << std::endl;
+    file << "  - PAGE_DOWN  Moves the cursor down one page." << std::endl;
+    file << "  - BACKSPACE  Delete one char before cursor" << std::endl;
+    file << "  - DELETE     Delete one char after cursor" << std::endl;
+    file << "  - TAB        Print tab (as a 3 spaces)" << std::endl;
+    file << "  - ENTER      Just enter, no more" << std::endl << std::endl;
+    file << "4. Search mode commands && buttons" << std::endl;
+    file << "  - / <text>   Search for the <text> string from the cursor to the end of the file." << std::endl;
+    file << "  - ? <text>   Search for the <text> string from the cursor to the beginning of the file." << std::endl;
+    file << "----------------------------------------------------------------------------------------" << std::endl;
+    file << "  - n  Repeat search forward." << std::endl;
+    file << "  - N  Repeat search back." << std::endl;
+
+    file.close();
 }
